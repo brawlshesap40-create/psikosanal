@@ -6,12 +6,13 @@ import { db } from "@/lib/db";
 import { psychologistProfiles, users } from "@/lib/db/schema";
 import { generatePsychologistSlug } from "@/lib/psychologists/slug";
 import { uploadDocument } from "@/lib/storage/upload";
+import { authService, DomainError } from "@psikosanal/core";
 import {
   loginSchema,
   registerDanisanSchema,
   registerPsikologSchema,
 } from "@/lib/validation/auth";
-import { hashPassword, verifyPassword } from "./password";
+import { hashPassword } from "./password";
 import { createSession, deleteSession } from "./session";
 import { getOptionalSession } from "./dal";
 
@@ -35,24 +36,18 @@ export async function loginAction(
   if (!parsed.success) {
     return { error: "E-posta ve şifre gereklidir." };
   }
-  const { email, password } = parsed.data;
   const next = String(formData.get("next") ?? "");
 
-  const user = await db.query.users.findFirst({
-    where: eq(users.email, email),
-  });
-
-  if (!user || user.role === "admin") {
-    return { error: "E-posta veya şifre hatalı." };
-  }
-
-  const valid = await verifyPassword(password, user.passwordHash);
-  if (!valid) {
-    return { error: "E-posta veya şifre hatalı." };
-  }
-
-  if (!user.isActive) {
-    return { error: "Hesabınız devre dışı bırakılmış. Lütfen bizimle iletişime geçin." };
+  let user: Awaited<ReturnType<typeof authService.login>>["user"];
+  try {
+    ({ user } = await authService.login({
+      ...parsed.data,
+      allowedRoles: ["danisan", "psikolog"],
+      issueTokens: false,
+    }));
+  } catch (error) {
+    if (error instanceof DomainError) return { error: error.message };
+    throw error;
   }
 
   await createSession(user.id, user.email, user.role);
@@ -70,22 +65,20 @@ export async function adminLoginAction(
   if (!parsed.success) {
     return { error: "E-posta ve şifre gereklidir." };
   }
-  const { email, password } = parsed.data;
 
-  const admin = await db.query.users.findFirst({
-    where: eq(users.email, email),
-  });
-
-  if (!admin || admin.role !== "admin") {
-    return { error: "E-posta veya şifre hatalı." };
+  let user: Awaited<ReturnType<typeof authService.login>>["user"];
+  try {
+    ({ user } = await authService.login({
+      ...parsed.data,
+      allowedRoles: ["admin"],
+      issueTokens: false,
+    }));
+  } catch (error) {
+    if (error instanceof DomainError) return { error: error.message };
+    throw error;
   }
 
-  const valid = await verifyPassword(password, admin.passwordHash);
-  if (!valid) {
-    return { error: "E-posta veya şifre hatalı." };
-  }
-
-  await createSession(admin.id, admin.email, admin.role);
+  await createSession(user.id, user.email, user.role);
   redirect("/admin/dashboard");
 }
 
@@ -102,20 +95,14 @@ export async function registerDanisanAction(
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Bilgileri kontrol edin." };
   }
-  const { fullName, email, phone, password } = parsed.data;
 
-  const existing = await db.query.users.findFirst({
-    where: eq(users.email, email),
-  });
-  if (existing) {
-    return { error: "Bu e-posta adresi zaten kayıtlı." };
+  let user: Awaited<ReturnType<typeof authService.registerDanisan>>;
+  try {
+    user = await authService.registerDanisan(parsed.data);
+  } catch (error) {
+    if (error instanceof DomainError) return { error: error.message };
+    throw error;
   }
-
-  const passwordHash = await hashPassword(password);
-  const [user] = await db
-    .insert(users)
-    .values({ email, passwordHash, role: "danisan", fullName, phone })
-    .returning();
 
   await createSession(user.id, user.email, user.role);
   redirect("/danisan/randevularim");
