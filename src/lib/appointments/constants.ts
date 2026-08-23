@@ -1,0 +1,1 @@
+export const CANCELLATION_WINDOW_HOURS = 24;
