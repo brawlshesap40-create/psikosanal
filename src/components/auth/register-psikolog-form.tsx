@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -52,10 +53,31 @@ export function RegisterPsikologForm() {
         <Label htmlFor="bio">Kendinizden Bahsedin</Label>
         <Textarea id="bio" name="bio" rows={4} required />
       </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="licenseDocument">Psikoloji Lisans Diploması</Label>
+        <Input
+          id="licenseDocument"
+          name="licenseDocument"
+          type="file"
+          accept="application/pdf,image/jpeg,image/png,image/webp"
+          required
+        />
+        <p className="text-xs text-muted-foreground">
+          PDF veya görsel olarak yükleyin (maks. 10 MB). Başvurunuz bu belge admin
+          tarafından incelendikten sonra onaylanır.
+        </p>
+      </div>
       {state?.error && <p className="text-sm text-destructive">{state.error}</p>}
       <Button type="submit" className="w-full" disabled={pending}>
         {pending ? "Başvuru gönderiliyor..." : "Başvuruyu Gönder"}
       </Button>
+      <p className="text-center text-sm text-muted-foreground">
+        Zaten hesabınız var mı?{" "}
+        <Link href="/giris" className="text-primary hover:underline">
+          Giriş yapın
+        </Link>
+        .
+      </p>
     </form>
   );
 }

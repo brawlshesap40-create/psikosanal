@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation";
+import { FileText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { getPsychologistApplicationById } from "@/lib/psychologists/queries";
 import { ApplicationReviewActions } from "@/components/admin/application-review-actions";
@@ -50,6 +52,28 @@ export default async function PsikologBasvuruDetayPage({
                 {entry.specialty.name}
               </Badge>
             ))}
+          </div>
+
+          <div>
+            <p className="text-sm text-muted-foreground">Psikoloji Lisans Diploması</p>
+            {application.licenseDocumentUrl ? (
+              <Button
+                size="sm"
+                variant="outline"
+                className="mt-1"
+                nativeButton={false}
+                render={
+                  <a href={application.licenseDocumentUrl} target="_blank" rel="noreferrer" />
+                }
+              >
+                <FileText className="size-4" />
+                Belgeyi Görüntüle
+              </Button>
+            ) : (
+              <p className="mt-1 text-sm text-destructive">
+                Belge yüklenmemiş — onaylamadan önce başvuru sahibiyle iletişime geçin.
+              </p>
+            )}
           </div>
         </CardContent>
       </Card>

@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { psychologistProfiles, users } from "@/lib/db/schema";
 import { generatePsychologistSlug } from "@/lib/psychologists/slug";
+import { uploadDocument } from "@/lib/storage/upload";
 import {
   loginSchema,
   registerDanisanSchema,
@@ -140,11 +141,26 @@ export async function registerPsikologAction(
   const { fullName, email, phone, password, title, experienceYears, city, bio } =
     parsed.data;
 
+  const licenseDocument = formData.get("licenseDocument");
+  if (!(licenseDocument instanceof File) || licenseDocument.size === 0) {
+    return { error: "Psikoloji lisans diplomanızı yüklemeniz gerekiyor." };
+  }
+
   const existing = await db.query.users.findFirst({
     where: eq(users.email, email),
   });
   if (existing) {
     return { error: "Bu e-posta adresi zaten kayıtlı." };
+  }
+
+  let licenseDocumentUrl: string;
+  try {
+    const uploaded = await uploadDocument(licenseDocument, "licenses");
+    licenseDocumentUrl = uploaded.url;
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "Diploma yüklenemedi.",
+    };
   }
 
   const passwordHash = await hashPassword(password);
@@ -163,6 +179,7 @@ export async function registerPsikologAction(
       experienceYears,
       city,
       bio,
+      licenseDocumentUrl,
     });
 
     return newUser;
