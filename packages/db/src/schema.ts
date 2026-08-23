@@ -1,6 +1,7 @@
 import { relations } from "drizzle-orm";
 import {
   boolean,
+  index,
   integer,
   pgEnum,
   pgTable,
@@ -8,6 +9,7 @@ import {
   text,
   timestamp,
   unique,
+  uuid,
   varchar,
 } from "drizzle-orm/pg-core";
 
@@ -82,6 +84,34 @@ export const users = pgTable("users", {
     .notNull()
     .defaultNow(),
 });
+
+export const refreshTokens = pgTable(
+  "refresh_tokens",
+  {
+    id: serial("id").primaryKey(),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    tokenHash: varchar("token_hash", { length: 64 }).notNull().unique(),
+    familyId: uuid("family_id").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+    replacedByHash: varchar("replaced_by_hash", { length: 64 }),
+    userAgent: varchar("user_agent", { length: 255 }),
+    ip: varchar("ip", { length: 45 }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("refresh_tokens_user_id_idx").on(table.userId),
+    index("refresh_tokens_family_id_idx").on(table.familyId),
+  ]
+);
+
+export const refreshTokensRelations = relations(refreshTokens, ({ one }) => ({
+  user: one(users, { fields: [refreshTokens.userId], references: [users.id] }),
+}));
 
 export const specialties = pgTable("specialties", {
   id: serial("id").primaryKey(),
@@ -392,6 +422,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   favorites: many(favorites),
   waitlistEntries: many(waitlistEntries),
   notifications: many(notifications),
+  refreshTokens: many(refreshTokens),
 }));
 
 export const psychologistProfilesRelations = relations(

@@ -7,11 +7,16 @@
     ".": "./src/index.ts",
     "./schema": "./src/schema.ts"
   },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
   "dependencies": {
     "drizzle-orm": "^0.45.2",
     "postgres": "^3.4.9"
   },
   "devDependencies": {
-    "drizzle-kit": "^0.31.10"
+    "@types/node": "^20.19.43",
+    "drizzle-kit": "^0.31.10",
+    "typescript": "^5"
   }
 }

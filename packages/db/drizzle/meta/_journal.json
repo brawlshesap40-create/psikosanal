@@ -36,6 +36,13 @@
       "when": 1787493419000,
       "tag": "0004_rename_license_document_key",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1787515555046,
+      "tag": "0005_little_karma",
+      "breakpoints": true
     }
   ]
 }
