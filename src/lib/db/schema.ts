@@ -111,7 +111,7 @@ export const psychologistProfiles = pgTable("psychologist_profiles", {
   introCallEnabled: boolean("intro_call_enabled").notNull().default(false),
 
   photoUrl: text("photo_url"),
-  licenseDocumentUrl: text("license_document_url"),
+  licenseDocumentKey: text("license_document_key"),
 
   approvalStatus: psikologApprovalStatusEnum("approval_status")
     .notNull()

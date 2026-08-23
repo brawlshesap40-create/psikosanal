@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { getPsychologistApplicationById } from "@/lib/psychologists/queries";
+import { getDocumentViewUrl } from "@/lib/storage/upload";
 import { ApplicationReviewActions } from "@/components/admin/application-review-actions";
 
 export default async function PsikologBasvuruDetayPage({
@@ -14,6 +15,10 @@ export default async function PsikologBasvuruDetayPage({
   const { id } = await params;
   const application = await getPsychologistApplicationById(Number(id));
   if (!application) notFound();
+
+  const diplomaUrl = application.licenseDocumentKey
+    ? await getDocumentViewUrl(application.licenseDocumentKey)
+    : null;
 
   return (
     <div className="max-w-2xl">
@@ -56,15 +61,13 @@ export default async function PsikologBasvuruDetayPage({
 
           <div>
             <p className="text-sm text-muted-foreground">Psikoloji Lisans Diploması</p>
-            {application.licenseDocumentUrl ? (
+            {diplomaUrl ? (
               <Button
                 size="sm"
                 variant="outline"
                 className="mt-1"
                 nativeButton={false}
-                render={
-                  <a href={application.licenseDocumentUrl} target="_blank" rel="noreferrer" />
-                }
+                render={<a href={diplomaUrl} target="_blank" rel="noreferrer" />}
               >
                 <FileText className="size-4" />
                 Belgeyi Görüntüle

@@ -153,10 +153,10 @@ export async function registerPsikologAction(
     return { error: "Bu e-posta adresi zaten kayıtlı." };
   }
 
-  let licenseDocumentUrl: string;
+  let licenseDocumentKey: string;
   try {
     const uploaded = await uploadDocument(licenseDocument, "licenses");
-    licenseDocumentUrl = uploaded.url;
+    licenseDocumentKey = uploaded.key;
   } catch (error) {
     return {
       error: error instanceof Error ? error.message : "Diploma yüklenemedi.",
@@ -179,7 +179,7 @@ export async function registerPsikologAction(
       experienceYears,
       city,
       bio,
-      licenseDocumentUrl,
+      licenseDocumentKey,
     });
 
     return newUser;
