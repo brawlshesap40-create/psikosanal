@@ -1,13 +1,13 @@
 import bcrypt from "bcryptjs";
-import { db } from "../apps/web/src/lib/db";
+import { eq } from "drizzle-orm";
+import { db } from "@psikosanal/db";
 import {
   availabilitySlots,
   psychologistProfiles,
   psychologistSpecialties,
   specialties,
   users,
-} from "../apps/web/src/lib/db/schema";
-import { generatePsychologistSlug } from "../apps/web/src/lib/psychologists/slug";
+} from "@psikosanal/db/schema";
 
 const SPECIALTIES = [
   "Kaygı Bozukluğu",
@@ -33,6 +33,21 @@ function slugify(input: string) {
     .replace(/[̀-ͯ]/g, "")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "");
+}
+
+async function generateUniqueSlug(fullName: string) {
+  const base = slugify(fullName) || "psikolog";
+  let candidate = base;
+  let suffix = 1;
+
+  while (true) {
+    const existing = await db.query.psychologistProfiles.findFirst({
+      where: eq(psychologistProfiles.slug, candidate),
+    });
+    if (!existing) return candidate;
+    suffix += 1;
+    candidate = `${base}-${suffix}`;
+  }
 }
 
 const DEMO_PSYCHOLOGISTS = [
@@ -125,7 +140,7 @@ async function seedDemoPsychologists() {
       })
       .returning();
 
-    const slug = await generatePsychologistSlug(item.fullName);
+    const slug = await generateUniqueSlug(item.fullName);
     const [profile] = await db
       .insert(psychologistProfiles)
       .values({
