@@ -1,13 +1,13 @@
 import bcrypt from "bcryptjs";
-import { db } from "../src/lib/db";
+import { db } from "../apps/web/src/lib/db";
 import {
   availabilitySlots,
   psychologistProfiles,
   psychologistSpecialties,
   specialties,
   users,
-} from "../src/lib/db/schema";
-import { generatePsychologistSlug } from "../src/lib/psychologists/slug";
+} from "../apps/web/src/lib/db/schema";
+import { generatePsychologistSlug } from "../apps/web/src/lib/psychologists/slug";
 
 const SPECIALTIES = [
   "Kaygı Bozukluğu",
