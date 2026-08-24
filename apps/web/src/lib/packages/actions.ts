@@ -1,11 +1,12 @@
 "use server";
 
-import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { packages, psychologistProfiles } from "@/lib/db/schema";
+import { psychologistProfiles } from "@/lib/db/schema";
 import { verifyPsikologSession } from "@/lib/auth/dal";
 import { createPackageSchema } from "@/lib/validation/package";
+import { packagesService } from "@psikosanal/core";
 
 export type PackageFormState = { error?: string } | undefined;
 
@@ -33,7 +34,7 @@ export async function createPackageAction(
     return { error: parsed.error.issues[0]?.message ?? "Bilgileri kontrol edin." };
   }
 
-  await db.insert(packages).values({ psychologistId, ...parsed.data });
+  await packagesService.createPackage(psychologistId, parsed.data);
 
   revalidatePath("/psikolog/paketler");
 }
@@ -41,10 +42,7 @@ export async function createPackageAction(
 export async function togglePackageActiveAction(packageId: number, isActive: boolean) {
   const psychologistId = await requireOwnPsychologistId();
 
-  await db
-    .update(packages)
-    .set({ isActive })
-    .where(and(eq(packages.id, packageId), eq(packages.psychologistId, psychologistId)));
+  await packagesService.toggleActive(psychologistId, packageId, isActive);
 
   revalidatePath("/psikolog/paketler");
 }
