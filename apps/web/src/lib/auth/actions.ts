@@ -1,10 +1,6 @@
 "use server";
 
-import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
-import { db } from "@/lib/db";
-import { psychologistProfiles, users } from "@/lib/db/schema";
-import { generatePsychologistSlug } from "@/lib/psychologists/slug";
 import { uploadDocument } from "@/lib/storage/upload";
 import { authService, DomainError } from "@psikosanal/core";
 import {
@@ -12,7 +8,6 @@ import {
   registerDanisanSchema,
   registerPsikologSchema,
 } from "@/lib/validation/auth";
-import { hashPassword } from "./password";
 import { createSession, deleteSession } from "./session";
 import { getOptionalSession } from "./dal";
 
@@ -125,19 +120,9 @@ export async function registerPsikologAction(
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Bilgileri kontrol edin." };
   }
-  const { fullName, email, phone, password, title, experienceYears, city, bio } =
-    parsed.data;
-
   const licenseDocument = formData.get("licenseDocument");
   if (!(licenseDocument instanceof File) || licenseDocument.size === 0) {
     return { error: "Psikoloji lisans diplomanızı yüklemeniz gerekiyor." };
-  }
-
-  const existing = await db.query.users.findFirst({
-    where: eq(users.email, email),
-  });
-  if (existing) {
-    return { error: "Bu e-posta adresi zaten kayıtlı." };
   }
 
   let licenseDocumentKey: string;
@@ -150,27 +135,13 @@ export async function registerPsikologAction(
     };
   }
 
-  const passwordHash = await hashPassword(password);
-  const slug = await generatePsychologistSlug(fullName);
-
-  const user = await db.transaction(async (tx) => {
-    const [newUser] = await tx
-      .insert(users)
-      .values({ email, passwordHash, role: "psikolog", fullName, phone })
-      .returning();
-
-    await tx.insert(psychologistProfiles).values({
-      userId: newUser.id,
-      slug,
-      title,
-      experienceYears,
-      city,
-      bio,
-      licenseDocumentKey,
-    });
-
-    return newUser;
-  });
+  let user: Awaited<ReturnType<typeof authService.registerPsikolog>>;
+  try {
+    user = await authService.registerPsikolog(parsed.data, { licenseDocumentKey });
+  } catch (error) {
+    if (error instanceof DomainError) return { error: error.message };
+    throw error;
+  }
 
   await createSession(user.id, user.email, user.role);
   redirect("/kayit/psikolog/basvuru-alindi");
@@ -193,14 +164,12 @@ export async function updateOwnAccountAction(
   const fullName = String(formData.get("fullName") ?? "").trim();
   const phone = String(formData.get("phone") ?? "").trim();
 
-  if (fullName.length < 2) {
-    return { error: "Ad soyad gereklidir." };
+  try {
+    await authService.updateAccount(session.userId, { fullName, phone });
+  } catch (error) {
+    if (error instanceof DomainError) return { error: error.message };
+    throw error;
   }
-
-  await db
-    .update(users)
-    .set({ fullName, phone: phone || null })
-    .where(eq(users.id, session.userId));
 
   return { error: undefined };
 }

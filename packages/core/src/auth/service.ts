@@ -1,7 +1,8 @@
 import { randomUUID } from "crypto";
 import { and, eq, isNull } from "drizzle-orm";
 import { db } from "@psikosanal/db";
-import { refreshTokens, users } from "@psikosanal/db/schema";
+import { psychologistProfiles, refreshTokens, users } from "@psikosanal/db/schema";
+import { generatePsychologistSlug } from "../psychologists/slug";
 import { hashPassword, verifyPassword } from "./password";
 import { generateRefreshToken, hashRefreshToken, signAccessToken } from "./tokens";
 import {
@@ -62,6 +63,55 @@ export async function registerDanisan(input: {
       phone: input.phone,
     })
     .returning();
+
+  return user;
+}
+
+export async function registerPsikolog(
+  input: {
+    fullName: string;
+    email: string;
+    phone: string;
+    password: string;
+    title: string;
+    experienceYears: number;
+    city: string;
+    bio: string;
+  },
+  extra: { licenseDocumentKey: string }
+) {
+  const email = input.email.toLowerCase();
+
+  const existing = await db.query.users.findFirst({ where: eq(users.email, email) });
+  if (existing) throw emailTaken();
+
+  const passwordHash = await hashPassword(input.password);
+  const slug = await generatePsychologistSlug(input.fullName);
+
+  const user = await db.transaction(async (tx) => {
+    const [newUser] = await tx
+      .insert(users)
+      .values({
+        email,
+        passwordHash,
+        role: "psikolog",
+        fullName: input.fullName,
+        phone: input.phone,
+      })
+      .returning();
+
+    await tx.insert(psychologistProfiles).values({
+      userId: newUser.id,
+      slug,
+      title: input.title,
+      bio: input.bio,
+      experienceYears: input.experienceYears,
+      city: input.city,
+      licenseDocumentKey: extra.licenseDocumentKey,
+    });
+
+    return newUser;
+  });
 
   return user;
 }

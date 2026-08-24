@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { testServer } from "./helpers/build";
 import { truncateAll } from "./helpers/db";
-import { hashRefreshToken, signAccessToken } from "@psikosanal/core";
+import { authService, DomainError, hashRefreshToken, signAccessToken } from "@psikosanal/core";
 
 beforeEach(async () => {
   await truncateAll();
@@ -49,6 +49,50 @@ describe("POST /v1/auth/register/danisan", () => {
     const response = await register(app);
     expect(response.statusCode).toBe(409);
     await app.close();
+  });
+});
+
+// No apps/api HTTP route exposes psychologist registration (it stays an
+// apps/web-only action, since it depends on an S3 upload pre-step) — so
+// this exercises authService.registerPsikolog directly, at the service
+// level, using the same DB-backed test harness as everything else here.
+describe("authService.registerPsikolog", () => {
+  const PSIKOLOG_INPUT = {
+    fullName: "Test Psikolog",
+    email: "test.psikolog@example.com",
+    phone: "5559876543",
+    password: "gecerli-sifre-123",
+    title: "Klinik Psikolog",
+    experienceYears: 5,
+    city: "İstanbul",
+    bio: "Yetişkin bireylerle çalışıyorum.",
+  };
+
+  it("creates a user and a psychologist profile together", async () => {
+    const user = await authService.registerPsikolog(PSIKOLOG_INPUT, {
+      licenseDocumentKey: "licenses/test-key.pdf",
+    });
+    expect(user.role).toBe("psikolog");
+
+    const { db } = await import("@psikosanal/db");
+    const { psychologistProfiles } = await import("@psikosanal/db/schema");
+    const { eq } = await import("drizzle-orm");
+    const profile = await db.query.psychologistProfiles.findFirst({
+      where: eq(psychologistProfiles.userId, user.id),
+    });
+    expect(profile?.title).toBe(PSIKOLOG_INPUT.title);
+    expect(profile?.licenseDocumentKey).toBe("licenses/test-key.pdf");
+    expect(profile?.slug).toBeTruthy();
+  });
+
+  it("rejects a duplicate email", async () => {
+    await authService.registerPsikolog(PSIKOLOG_INPUT, {
+      licenseDocumentKey: "licenses/first.pdf",
+    });
+
+    await expect(
+      authService.registerPsikolog(PSIKOLOG_INPUT, { licenseDocumentKey: "licenses/second.pdf" })
+    ).rejects.toBeInstanceOf(DomainError);
   });
 });
 

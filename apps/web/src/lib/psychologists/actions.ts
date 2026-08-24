@@ -1,34 +1,23 @@
 "use server";
 
-import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { db } from "@/lib/db";
-import { psychologistProfiles, psychologistSpecialties } from "@/lib/db/schema";
 import { verifyAdminSession, verifyPsikologSession } from "@/lib/auth/dal";
 import { psychologistProfileSchema } from "@/lib/validation/psychologist";
+import { psychologistsService } from "@psikosanal/core";
 
 export async function approvePsychologistAction(psychologistId: number) {
   await verifyAdminSession();
 
-  await db
-    .update(psychologistProfiles)
-    .set({ approvalStatus: "onaylandi", adminNote: null })
-    .where(eq(psychologistProfiles.id, psychologistId));
+  await psychologistsService.approve(psychologistId);
 
   revalidatePath("/admin/psikolog-basvurulari");
   revalidatePath("/admin/psikologlar");
 }
 
-export async function rejectPsychologistAction(
-  psychologistId: number,
-  reason: string
-) {
+export async function rejectPsychologistAction(psychologistId: number, reason: string) {
   await verifyAdminSession();
 
-  await db
-    .update(psychologistProfiles)
-    .set({ approvalStatus: "reddedildi", adminNote: reason })
-    .where(eq(psychologistProfiles.id, psychologistId));
+  await psychologistsService.reject(psychologistId, reason);
 
   revalidatePath("/admin/psikolog-basvurulari");
 }
@@ -65,47 +54,20 @@ export async function updatePsychologistProfileAction(
     return { error: parsed.error.issues[0]?.message ?? "Bilgileri kontrol edin." };
   }
 
-  const profile = await db.query.psychologistProfiles.findFirst({
-    where: eq(psychologistProfiles.userId, session.userId),
-  });
-  if (!profile) {
+  const updated = await psychologistsService.updateProfile(session.userId, parsed.data);
+  if (!updated) {
     return { error: "Profil bulunamadı." };
   }
 
-  const { specialtyIds: newSpecialtyIds, ...rest } = parsed.data;
-
-  await db.transaction(async (tx) => {
-    await tx
-      .update(psychologistProfiles)
-      .set(rest)
-      .where(eq(psychologistProfiles.id, profile.id));
-
-    await tx
-      .delete(psychologistSpecialties)
-      .where(eq(psychologistSpecialties.psychologistId, profile.id));
-
-    if (newSpecialtyIds.length > 0) {
-      await tx.insert(psychologistSpecialties).values(
-        newSpecialtyIds.map((specialtyId) => ({
-          psychologistId: profile.id,
-          specialtyId,
-        }))
-      );
-    }
-  });
-
   revalidatePath("/psikolog/profil");
-  revalidatePath(`/psikologlar/${profile.slug}`);
+  revalidatePath(`/psikologlar/${updated.slug}`);
   return { success: true };
 }
 
 export async function updatePsychologistPhotoAction(photoUrl: string) {
   const session = await verifyPsikologSession();
 
-  await db
-    .update(psychologistProfiles)
-    .set({ photoUrl })
-    .where(eq(psychologistProfiles.userId, session.userId));
+  await psychologistsService.updatePhoto(session.userId, photoUrl);
 
   revalidatePath("/psikolog/profil");
 }

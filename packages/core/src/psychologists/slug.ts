@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
-import { db } from "@/lib/db";
-import { psychologistProfiles } from "@/lib/db/schema";
+import { db } from "@psikosanal/db";
+import { psychologistProfiles } from "@psikosanal/db/schema";
 
 const DIACRITICS_REGEX = new RegExp("[\\u0300-\\u036f]", "g");
 

@@ -9,3 +9,5 @@ export * as availabilityService from "./availability/service";
 export * as packagesService from "./packages/service";
 export * as conversationsService from "./conversations/service";
 export * as reviewsService from "./reviews/service";
+export * as psychologistsService from "./psychologists/service";
+export * from "./psychologists/slug";
