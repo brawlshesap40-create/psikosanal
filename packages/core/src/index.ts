@@ -5,3 +5,4 @@ export * from "./auth/tokens";
 export * as notificationsService from "./notifications/service";
 export * as favoritesService from "./favorites/service";
 export * as waitlistService from "./waitlist/service";
+export * as availabilityService from "./availability/service";

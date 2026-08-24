@@ -1,11 +1,12 @@
 "use server";
 
-import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { availabilitySlots, psychologistProfiles } from "@/lib/db/schema";
+import { psychologistProfiles } from "@/lib/db/schema";
 import { verifyPsikologSession } from "@/lib/auth/dal";
 import { createSlotSchema } from "@/lib/validation/availability";
+import { availabilityService, DomainError } from "@psikosanal/core";
 
 export type SlotFormState = { error?: string } | undefined;
 
@@ -35,24 +36,11 @@ export async function createAvailabilitySlotAction(
     return { error: parsed.error.issues[0]?.message ?? "Bilgileri kontrol edin." };
   }
 
-  const occurrences = Array.from({ length: parsed.data.repeatWeeks }, (_, index) => {
-    const date = new Date(parsed.data.startTime);
-    date.setDate(date.getDate() + index * 7);
-    return date;
-  });
-
   try {
-    await db.insert(availabilitySlots).values(
-      occurrences.map((startTime) => ({
-        psychologistId,
-        startTime,
-        durationMinutes: parsed.data.durationMinutes,
-        sessionType: parsed.data.sessionType,
-        isIntro: parsed.data.isIntro,
-      }))
-    );
-  } catch {
-    return { error: "Seçilen saatlerden biri için zaten bir müsaitlik kaydı var." };
+    await availabilityService.createSlots(psychologistId, parsed.data);
+  } catch (error) {
+    if (error instanceof DomainError) return { error: error.message };
+    throw error;
   }
 
   revalidatePath("/psikolog/musaitlik");
@@ -61,15 +49,7 @@ export async function createAvailabilitySlotAction(
 export async function deleteAvailabilitySlotAction(slotId: number) {
   const psychologistId = await requireOwnPsychologistId();
 
-  await db
-    .delete(availabilitySlots)
-    .where(
-      and(
-        eq(availabilitySlots.id, slotId),
-        eq(availabilitySlots.psychologistId, psychologistId),
-        eq(availabilitySlots.status, "musait")
-      )
-    );
+  await availabilityService.deleteSlot(psychologistId, slotId);
 
   revalidatePath("/psikolog/musaitlik");
 }
