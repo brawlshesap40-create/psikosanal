@@ -1,36 +1,63 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Psikosanal
 
-## Getting Started
+Online psikolog randevu platformu. Danışanlar psikolog arayıp inceleyebilir, randevu alıp online ödeme yapabilir, paket satın alabilir, mesajlaşabilir ve görüşme sonrası değerlendirme bırakabilir. Psikologlar profillerini yönetir, müsaitlik/paket tanımlar ve randevularını takip eder. Adminler psikolog başvurularını onaylar, ödemeleri ve yorumları yönetir.
 
-First, run the development server:
+## Monorepo yapısı
+
+npm workspaces ile yönetilen bir monorepo:
+
+- **`apps/web`** — Next.js uygulaması (App Router). Sitenin tamamı: genel sayfalar, danışan/psikolog/admin panelleri, server action'lar. Kendi çerez tabanlı oturum (session) sistemini kullanır.
+- **`apps/api`** — Fastify tabanlı, JWT access/refresh token ile çalışan bağımsız bir REST API. `apps/web`'den ayrı, client-agnostic bir backend (ör. ileride bir mobil uygulama için) — kendi oturum sistemi yerine bearer token kullanır.
+- **`packages/core`** — Framework'ten bağımsız iş mantığı (domain servisleri, validasyon şemaları, `DomainError`). Hem `apps/web` hem `apps/api` buradaki servisleri çağırır; iş kuralları tek yerde tanımlıdır.
+- **`packages/db`** — Paylaşılan Drizzle ORM şeması ve veritabanı istemcisi.
+
+### `packages/core` deseni
+
+Her domain (`auth`, `appointments`, `payments`, ...) kendi `service.ts` dosyasında düz, async fonksiyonlar olarak tanımlanır — veritabanına doğrudan `@psikosanal/db` üzerinden erişir ve hata durumunda `DomainError` (kod + mesaj + HTTP status) fırlatır. `apps/web`'in server action'ları bu hatayı yakalayıp mevcut `{error: string}` form state şekline çevirir; `apps/api`'nin route'ları aynı hatayı `{error: {code, message}}` JSON zarfına çevirir. Next.js'e özgü şeyler (`cookies()`, `redirect()`, `revalidatePath()`, FormData ayrıştırma) her zaman `apps/web` tarafında kalır, asla `packages/core`'a sızmaz.
+
+## Kurulum
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Ortam değişkenleri
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- Kök dizinde `.env.local` — `apps/web` ve veritabanı scriptleri (`db:*`) için. Şablon: [.env.example](.env.example).
+- `apps/api/.env` — `apps/api` için, ayrı `API_JWT_SECRET` dahil. Şablon: [apps/api/.env.example](apps/api/.env.example).
+- `apps/api/.env.test` — `apps/api` testleri için (gitignored), CI'da bunun yerine workflow'un kendi `env:` bloğu kullanılır.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Yerel servisler (Postgres + MinIO)
 
-## Learn More
+```bash
+docker compose up -d
+```
 
-To learn more about Next.js, take a look at the following resources:
+### Veritabanı
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npm run db:migrate   # mevcut migration'ları uygula
+npm run db:seed      # demo veri + admin kullanıcı oluştur
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Geliştirme
 
-## Deploy on Vercel
+```bash
+npm run dev       # apps/web (Next.js, http://localhost:3000)
+npm run dev:api   # apps/api (Fastify, http://localhost:3001)
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Scriptler (kökten, tüm workspace'lere yayılır)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Komut | Açıklama |
+|---|---|
+| `npm run build` | Tüm workspace'leri derler |
+| `npm run lint` | ESLint (apps/web) |
+| `npm run typecheck` | `tsc --noEmit` (her workspace) |
+| `npm run test` | Vitest (her workspace) |
+| `npm run db:generate` | Yeni Drizzle migration üretir |
+| `npm run db:studio` | Drizzle Studio açar |
+
+## Testler
+
+`apps/api`'nin testleri `psikosanal_test` adlı gerçek bir Postgres veritabanına karşı çalışır (Docker Compose'daki postgres servisi üzerinde, CI'da ayrı bir servis konteyneri olarak). `packages/core`'daki testler saf birim testleridir, veritabanı gerektirmez.
