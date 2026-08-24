@@ -6,6 +6,7 @@ import authPlugin from "./plugins/auth";
 import errorHandlerPlugin from "./plugins/error-handler";
 import healthRoutes from "./routes/health";
 import authRoutes from "./routes/auth";
+import notificationsRoutes from "./routes/notifications";
 
 export function buildServer(opts: FastifyServerOptions = {}) {
   const app = Fastify({
@@ -17,6 +18,7 @@ export function buildServer(opts: FastifyServerOptions = {}) {
   app.register(errorHandlerPlugin);
   app.register(authPlugin);
   app.register(healthRoutes);
+  app.register(notificationsRoutes);
 
   app.register(async (scoped) => {
     await scoped.register(rateLimit, {
