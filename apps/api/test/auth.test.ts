@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { testServer } from "./helpers/build";
 import { truncateAll } from "./helpers/db";
-import { signAccessToken } from "@psikosanal/core";
+import { hashRefreshToken, signAccessToken } from "@psikosanal/core";
 
 beforeEach(async () => {
   await truncateAll();
@@ -53,6 +53,46 @@ describe("POST /v1/auth/register/danisan", () => {
 });
 
 describe("POST /v1/auth/login", () => {
+  it("issues a real, working token pair for correct credentials and persists the refresh token", async () => {
+    const app = testServer();
+    await register(app);
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/v1/auth/login",
+      payload: { email: DANISAN.email, password: DANISAN.password },
+    });
+    expect(response.statusCode).toBe(200);
+
+    const { accessToken, refreshToken } = response.json();
+    expect(typeof accessToken).toBe("string");
+    expect(typeof refreshToken).toBe("string");
+
+    // The token pair must be the real, request-signed thing, not stubbed:
+    // the access token must pass a protected route, and the refresh token
+    // must exist as a hashed row in the DB (login() previously only ever
+    // ran through registerDanisan's internal call to it in tests, never
+    // exercised on its own via the login route).
+    const me = await app.inject({
+      method: "GET",
+      url: "/v1/auth/me",
+      headers: { authorization: `Bearer ${accessToken}` },
+    });
+    expect(me.statusCode).toBe(200);
+    expect(me.json().email).toBe(DANISAN.email);
+
+    const { db } = await import("@psikosanal/db");
+    const { refreshTokens } = await import("@psikosanal/db/schema");
+    const { eq } = await import("drizzle-orm");
+    const stored = await db.query.refreshTokens.findFirst({
+      where: eq(refreshTokens.tokenHash, hashRefreshToken(refreshToken)),
+    });
+    expect(stored).toBeDefined();
+    expect(stored?.revokedAt).toBeNull();
+
+    await app.close();
+  });
+
   it("rejects a wrong password and a nonexistent user with the same body shape", async () => {
     const app = testServer();
     await register(app);
