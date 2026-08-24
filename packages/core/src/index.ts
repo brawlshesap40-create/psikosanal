@@ -11,3 +11,4 @@ export * as conversationsService from "./conversations/service";
 export * as reviewsService from "./reviews/service";
 export * as psychologistsService from "./psychologists/service";
 export * from "./psychologists/slug";
+export * as appointmentsService from "./appointments/service";
