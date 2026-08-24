@@ -11,6 +11,7 @@ import favoritesRoutes from "./routes/favorites";
 import waitlistRoutes from "./routes/waitlist";
 import availabilityRoutes from "./routes/availability";
 import packagesRoutes from "./routes/packages";
+import conversationsRoutes from "./routes/conversations";
 
 export function buildServer(opts: FastifyServerOptions = {}) {
   const app = Fastify({
@@ -27,6 +28,7 @@ export function buildServer(opts: FastifyServerOptions = {}) {
   app.register(waitlistRoutes);
   app.register(availabilityRoutes);
   app.register(packagesRoutes);
+  app.register(conversationsRoutes);
 
   app.register(async (scoped) => {
     await scoped.register(rateLimit, {
