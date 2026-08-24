@@ -1,13 +1,3 @@
-import { desc } from "drizzle-orm";
-import { db } from "@/lib/db";
-import { payments } from "@/lib/db/schema";
+import { paymentsService } from "@psikosanal/core";
 
-export async function getAllPayments() {
-  return db.query.payments.findMany({
-    orderBy: [desc(payments.createdAt)],
-    with: {
-      client: true,
-      psychologist: { with: { user: true } },
-    },
-  });
-}
+export const getAllPayments = paymentsService.getAllPayments;

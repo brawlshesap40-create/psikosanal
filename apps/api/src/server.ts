@@ -15,6 +15,7 @@ import conversationsRoutes from "./routes/conversations";
 import reviewsRoutes from "./routes/reviews";
 import psychologistsRoutes from "./routes/psychologists";
 import appointmentsRoutes from "./routes/appointments";
+import paymentsRoutes from "./routes/payments";
 
 export function buildServer(opts: FastifyServerOptions = {}) {
   const app = Fastify({
@@ -35,6 +36,7 @@ export function buildServer(opts: FastifyServerOptions = {}) {
   app.register(reviewsRoutes);
   app.register(psychologistsRoutes);
   app.register(appointmentsRoutes);
+  app.register(paymentsRoutes);
 
   app.register(async (scoped) => {
     await scoped.register(rateLimit, {

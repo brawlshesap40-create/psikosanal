@@ -16,11 +16,13 @@
     "@psikosanal/db": "*",
     "bcryptjs": "^3.0.3",
     "drizzle-orm": "^0.45.2",
+    "iyzipay": "^2.0.69",
     "jose": "^6.2.10",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
+    "@types/iyzipay": "^2.0.3",
     "@types/node": "^20.19.43",
     "typescript": "^5",
     "vitest": "^4.1.11"

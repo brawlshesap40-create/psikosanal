@@ -1,4 +1,3 @@
-import "server-only";
 import Iyzipay from "iyzipay";
 
 export function getIyzico() {
@@ -33,10 +32,7 @@ export type CheckoutFormInitializeData = Omit<
   "installments" | "paymentCard"
 >;
 
-export function checkoutFormInitializeCall(
-  iyzico: Iyzipay,
-  data: CheckoutFormInitializeData
-) {
+export function checkoutFormInitializeCall(iyzico: Iyzipay, data: CheckoutFormInitializeData) {
   return iyzicoCall<CheckoutFormInitializeData, Iyzipay.CheckoutFormInitialResult>(
     iyzico.checkoutFormInitialize.create.bind(iyzico.checkoutFormInitialize) as unknown as (
       data: CheckoutFormInitializeData,
