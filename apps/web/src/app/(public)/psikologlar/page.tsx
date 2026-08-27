@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SearchX } from "lucide-react";
 import { getApprovedPsychologists, type PsychologistSort } from "@/lib/psychologists/queries";
 import { getAllSpecialties } from "@/lib/specialties/queries";
 import { getOptionalSession } from "@/lib/auth/dal";
@@ -11,6 +12,7 @@ type SearchParams = {
   uzmanlik?: string;
   sehir?: string;
   online?: string;
+  onGorusme?: string;
   minFiyat?: string;
   maxFiyat?: string;
   cinsiyet?: string;
@@ -34,6 +36,7 @@ export default async function PsikologlarPage({
       specialtySlug: params.uzmanlik || undefined,
       city: params.sehir || undefined,
       onlineOnly: params.online === "1",
+      introOnly: params.onGorusme === "1",
       minPrice: params.minFiyat ? Number(params.minFiyat) : undefined,
       maxPrice: params.maxFiyat ? Number(params.maxFiyat) : undefined,
       gender: params.cinsiyet || undefined,
@@ -65,12 +68,23 @@ export default async function PsikologlarPage({
         <PsychologistFilterForm specialties={specialties} />
 
         <div>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {psychologists.length === 0 && (
+          {psychologists.length === 0 && (
+            <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-border py-16 text-center">
+              <SearchX className="size-8 text-muted-foreground" />
               <p className="text-sm text-muted-foreground">
                 Bu kriterlere uygun psikolog bulunamadı.
               </p>
-            )}
+              <Button
+                size="sm"
+                variant="outline"
+                nativeButton={false}
+                render={<Link href="/psikologlar" />}
+              >
+                Filtreleri Temizle
+              </Button>
+            </div>
+          )}
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {psychologists.map((psychologist) => (
               <PsychologistCard
                 key={psychologist.id}

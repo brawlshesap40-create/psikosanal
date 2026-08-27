@@ -1,10 +1,21 @@
-import Link from "next/link";
+import {
+  LayoutGrid,
+  FileCheck2,
+  Stethoscope,
+  Users,
+  CalendarCheck2,
+  Wallet,
+  Star,
+  Newspaper,
+  Ticket,
+  HelpCircle,
+  Building2,
+} from "lucide-react";
 import { verifyAdminSession } from "@/lib/auth/dal";
 import { logoutAction } from "@/lib/auth/actions";
 import { countPendingApplications } from "@/lib/psychologists/queries";
 import { getPendingReviews } from "@/lib/reviews/queries";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { DashboardShell, type DashboardNavItem } from "@/components/dashboard/dashboard-shell";
 
 export default async function AdminDashboardLayout({
   children,
@@ -17,45 +28,23 @@ export default async function AdminDashboardLayout({
     getPendingReviews(),
   ]);
 
+  const items: DashboardNavItem[] = [
+    { href: "/admin/dashboard", label: "Özet", icon: <LayoutGrid /> },
+    { href: "/admin/psikolog-basvurulari", label: "Başvurular", icon: <FileCheck2 />, badge: pendingCount || undefined },
+    { href: "/admin/psikologlar", label: "Psikologlar", icon: <Stethoscope /> },
+    { href: "/admin/danisanlar", label: "Danışanlar", icon: <Users /> },
+    { href: "/admin/randevular", label: "Randevular", icon: <CalendarCheck2 /> },
+    { href: "/admin/odemeler", label: "Ödemeler", icon: <Wallet /> },
+    { href: "/admin/yorumlar", label: "Yorumlar", icon: <Star />, badge: pendingReviews.length || undefined },
+    { href: "/admin/blog", label: "Blog", icon: <Newspaper /> },
+    { href: "/admin/indirim-kodlari", label: "İndirim Kodları", icon: <Ticket /> },
+    { href: "/admin/sorular", label: "Sorular", icon: <HelpCircle /> },
+    { href: "/admin/kurumsal-talepler", label: "Kurumsal", icon: <Building2 /> },
+  ];
+
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6">
-      <div className="mb-6 flex items-center justify-between">
-        <nav className="flex items-center gap-4 text-sm font-medium text-muted-foreground">
-          <Link href="/admin/dashboard" className="hover:text-foreground">
-            Özet
-          </Link>
-          <Link
-            href="/admin/psikolog-basvurulari"
-            className="flex items-center gap-1.5 hover:text-foreground"
-          >
-            Başvurular
-            {pendingCount > 0 && <Badge>{pendingCount}</Badge>}
-          </Link>
-          <Link href="/admin/psikologlar" className="hover:text-foreground">
-            Psikologlar
-          </Link>
-          <Link href="/admin/danisanlar" className="hover:text-foreground">
-            Danışanlar
-          </Link>
-          <Link href="/admin/randevular" className="hover:text-foreground">
-            Randevular
-          </Link>
-          <Link href="/admin/odemeler" className="hover:text-foreground">
-            Ödemeler
-          </Link>
-          <Link href="/admin/yorumlar" className="flex items-center gap-1.5 hover:text-foreground">
-            Yorumlar
-            {pendingReviews.length > 0 && <Badge>{pendingReviews.length}</Badge>}
-          </Link>
-        </nav>
-        <form action={logoutAction} className="flex items-center gap-3">
-          <span className="text-sm text-muted-foreground">{session.email}</span>
-          <Button type="submit" variant="ghost" size="sm">
-            Çıkış Yap
-          </Button>
-        </form>
-      </div>
+    <DashboardShell items={items} roleLabel="Yönetim Paneli" email={session.email} logoutAction={logoutAction}>
       {children}
-    </div>
+    </DashboardShell>
   );
 }

@@ -1,0 +1,11 @@
+# Capacitor native platform (regenerate with: npm run add:android -w apps/mobile)
+/android/
+
+# Generated icon/splash resources
+/resources/android/
+
+# deps / build
+node_modules/
+*.apk
+*.aab
+.env

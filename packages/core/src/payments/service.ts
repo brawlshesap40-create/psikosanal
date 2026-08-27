@@ -4,6 +4,7 @@ import { db } from "@psikosanal/db";
 import {
   appointments,
   availabilitySlots,
+  giftVouchers,
   packagePurchases,
   payments,
   psychologistProfiles,
@@ -12,6 +13,8 @@ import {
 import { generateVideoRoomName } from "../video/room";
 import { getAvailablePackageCredit, getPackageById } from "../packages/service";
 import { createNotification } from "../notifications/service";
+import { incrementUsage, validateAndPriceDiscount } from "../discounts/service";
+import { generateGiftCode } from "../gifts/service";
 import { checkoutFormInitializeCall, getIyzico, Iyzipay, iyzicoCall } from "./iyzico";
 import {
   iyzicoNotConfigured,
@@ -79,10 +82,10 @@ export type InitiateBookingResult =
 
 export async function initiateBooking(
   clientId: number,
-  input: { slotId: number; clientNote: string | null },
+  input: { slotId: number; clientNote: string | null; discountCode?: string },
   meta: { ip: string; callbackUrl: string }
 ): Promise<InitiateBookingResult> {
-  const { slotId, clientNote } = input;
+  const { slotId, clientNote, discountCode } = input;
 
   const slot = await db.query.availabilitySlots.findFirst({
     where: eq(availabilitySlots.id, slotId),
@@ -168,6 +171,11 @@ export async function initiateBooking(
   const iyzico = getIyzico();
   if (!iyzico) throw iyzicoNotConfigured();
 
+  const discountResult = discountCode
+    ? await validateAndPriceDiscount(discountCode, "seans", psychologist.sessionPriceTl)
+    : null;
+  const chargeAmountTl = discountResult?.finalAmountTl ?? psychologist.sessionPriceTl;
+
   const locked = await db.transaction(async (tx) => {
     const [lockedSlot] = await tx
       .update(availabilitySlots)
@@ -197,7 +205,9 @@ export async function initiateBooking(
         psychologistId: lockedSlot.psychologistId,
         kind: "seans",
         appointmentId: appointment.id,
-        amountTl: psychologist.sessionPriceTl!,
+        amountTl: chargeAmountTl,
+        discountCodeId: discountResult?.discountCodeId ?? null,
+        discountAmountTl: discountResult?.discountAmountTl ?? null,
         iyzicoConversationId: conversationId,
       })
       .returning();
@@ -253,6 +263,7 @@ export async function initiateBooking(
 export async function initiatePackagePurchase(
   clientId: number,
   packageId: number,
+  options: { discountCode?: string; gift?: { recipientEmail: string } } | undefined,
   meta: { ip: string; callbackUrl: string }
 ): Promise<{ checkoutFormContent: string }> {
   const pkg = await getPackageById(packageId);
@@ -260,6 +271,11 @@ export async function initiatePackagePurchase(
 
   const iyzico = getIyzico();
   if (!iyzico) throw iyzicoNotConfigured();
+
+  const discountResult = options?.discountCode
+    ? await validateAndPriceDiscount(options.discountCode, "paket", pkg.priceTl)
+    : null;
+  const chargeAmountTl = discountResult?.finalAmountTl ?? pkg.priceTl;
 
   const conversationId = randomUUID();
   const [payment] = await db
@@ -269,14 +285,18 @@ export async function initiatePackagePurchase(
       psychologistId: pkg.psychologistId,
       kind: "paket",
       packageId: pkg.id,
-      amountTl: pkg.priceTl,
+      amountTl: chargeAmountTl,
+      discountCodeId: discountResult?.discountCodeId ?? null,
+      discountAmountTl: discountResult?.discountAmountTl ?? null,
+      isGift: Boolean(options?.gift),
+      giftRecipientEmail: options?.gift?.recipientEmail ?? null,
       iyzicoConversationId: conversationId,
     })
     .returning();
 
   const buyer = await buildBuyer(clientId, meta.ip);
   const address = addressFrom(buyer);
-  const price = String(pkg.priceTl);
+  const price = String(chargeAmountTl);
 
   try {
     const result = await checkoutFormInitializeCall(iyzico, {
@@ -321,14 +341,15 @@ export type FinalizeResult = {
   ok: boolean;
   kind: "seans" | "paket" | null;
   appointmentId: number | null;
+  giftCode: string | null;
 };
 
 export async function finalizeByToken(token: string): Promise<FinalizeResult> {
   const iyzico = getIyzico();
-  if (!iyzico) return { ok: false, kind: null, appointmentId: null };
+  if (!iyzico) return { ok: false, kind: null, appointmentId: null, giftCode: null };
 
   const payment = await db.query.payments.findFirst({ where: eq(payments.iyzicoToken, token) });
-  if (!payment) return { ok: false, kind: null, appointmentId: null };
+  if (!payment) return { ok: false, kind: null, appointmentId: null, giftCode: null };
 
   let result;
   try {
@@ -343,7 +364,8 @@ export async function finalizeByToken(token: string): Promise<FinalizeResult> {
   const success = result?.status === "success" && result.paymentStatus === "SUCCESS";
 
   if (payment.kind === "seans") {
-    if (!payment.appointmentId) return { ok: false, kind: "seans", appointmentId: null };
+    if (!payment.appointmentId)
+      return { ok: false, kind: "seans", appointmentId: null, giftCode: null };
 
     if (success) {
       await db.transaction(async (tx) => {
@@ -357,6 +379,7 @@ export async function finalizeByToken(token: string): Promise<FinalizeResult> {
           .where(eq(appointments.id, payment.appointmentId!));
       });
       await notifyPsychologistOfBooking(payment.psychologistId);
+      if (payment.discountCodeId) await incrementUsage(payment.discountCodeId);
     } else {
       const appointment = await db.query.appointments.findFirst({
         where: eq(appointments.id, payment.appointmentId),
@@ -379,32 +402,51 @@ export async function finalizeByToken(token: string): Promise<FinalizeResult> {
       });
     }
 
-    return { ok: success, kind: "seans", appointmentId: payment.appointmentId };
+    return { ok: success, kind: "seans", appointmentId: payment.appointmentId, giftCode: null };
   }
 
   // kind === "paket"
+  let giftCode: string | null = null;
   if (success && payment.packageId) {
     const pkg = await getPackageById(payment.packageId);
     if (pkg) {
-      await db.transaction(async (tx) => {
-        const [purchase] = await tx
-          .insert(packagePurchases)
-          .values({
+      if (payment.isGift) {
+        giftCode = generateGiftCode();
+        await db.transaction(async (tx) => {
+          await tx.insert(giftVouchers).values({
             packageId: pkg.id,
-            clientId: payment.clientId,
-            psychologistId: pkg.psychologistId,
-            sessionsRemaining: pkg.sessionCount,
-          })
-          .returning();
-        await tx
-          .update(payments)
-          .set({
-            status: "basarili",
-            iyzicoPaymentId: result?.paymentId ?? null,
-            packagePurchaseId: purchase.id,
-          })
-          .where(eq(payments.id, payment.id));
-      });
+            buyerId: payment.clientId,
+            paymentId: payment.id,
+            recipientEmail: payment.giftRecipientEmail ?? "",
+            code: giftCode!,
+          });
+          await tx
+            .update(payments)
+            .set({ status: "basarili", iyzicoPaymentId: result?.paymentId ?? null })
+            .where(eq(payments.id, payment.id));
+        });
+      } else {
+        await db.transaction(async (tx) => {
+          const [purchase] = await tx
+            .insert(packagePurchases)
+            .values({
+              packageId: pkg.id,
+              clientId: payment.clientId,
+              psychologistId: pkg.psychologistId,
+              sessionsRemaining: pkg.sessionCount,
+            })
+            .returning();
+          await tx
+            .update(payments)
+            .set({
+              status: "basarili",
+              iyzicoPaymentId: result?.paymentId ?? null,
+              packagePurchaseId: purchase.id,
+            })
+            .where(eq(payments.id, payment.id));
+        });
+      }
+      if (payment.discountCodeId) await incrementUsage(payment.discountCodeId);
     }
   } else {
     await db
@@ -413,7 +455,7 @@ export async function finalizeByToken(token: string): Promise<FinalizeResult> {
       .where(eq(payments.id, payment.id));
   }
 
-  return { ok: success, kind: "paket", appointmentId: null };
+  return { ok: success, kind: "paket", appointmentId: null, giftCode };
 }
 
 export async function refundPayment(paymentId: number, meta: { ip: string }) {

@@ -68,6 +68,14 @@ export function PsychologistFilterForm({ specialties }: { specialties: Specialty
         Sadece online görüşme
       </label>
 
+      <label className="flex items-center gap-2 text-sm">
+        <Checkbox
+          checked={searchParams.get("onGorusme") === "1"}
+          onCheckedChange={(checked) => updateParam("onGorusme", checked ? "1" : null)}
+        />
+        Sadece ücretsiz ön görüşme sunanlar
+      </label>
+
       <div className="space-y-1.5">
         <Label>Fiyat Aralığı (₺)</Label>
         <div className="flex items-center gap-2">

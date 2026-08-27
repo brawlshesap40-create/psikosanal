@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -131,6 +132,11 @@ export function BookingPanel({
       <div className="space-y-1.5">
         <Label htmlFor="clientNote">Not (opsiyonel)</Label>
         <Textarea id="clientNote" name="clientNote" rows={3} />
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="discountCode">İndirim Kodu (opsiyonel)</Label>
+        <Input id="discountCode" name="discountCode" placeholder="Örn. HOSGELDIN" className="uppercase" />
       </div>
 
       {state?.error && <p className="text-sm text-destructive">{state.error}</p>}

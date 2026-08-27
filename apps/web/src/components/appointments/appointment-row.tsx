@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ReviewDialog } from "@/components/reviews/review-dialog";
 import { useNow } from "@/lib/use-now";
 import {
@@ -98,9 +99,13 @@ export function AppointmentRow({ appointment, viewer }: AppointmentRowProps) {
   }
 
   return (
-    <Card>
+    <Card className="transition-shadow duration-200 hover:shadow-md">
       <CardContent className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div>
+        <div className="flex items-start gap-3">
+          <Avatar className="mt-0.5">
+            <AvatarFallback>{counterpartName?.slice(0, 1)}</AvatarFallback>
+          </Avatar>
+          <div>
           <p className="font-medium text-foreground">{counterpartName}</p>
           <p className="text-sm text-muted-foreground">{date}</p>
           <div className="mt-1 flex flex-wrap gap-1.5">
@@ -114,6 +119,7 @@ export function AppointmentRow({ appointment, viewer }: AppointmentRowProps) {
               Not: {appointment.clientNote}
             </p>
           )}
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">

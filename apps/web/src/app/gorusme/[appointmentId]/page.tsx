@@ -2,7 +2,8 @@ import { notFound, redirect } from "next/navigation";
 import { getOptionalSession } from "@/lib/auth/dal";
 import { getAppointmentById } from "@/lib/appointments/queries";
 import { getPsychologistByUserId } from "@/lib/psychologists/queries";
-import { videoRoomUrl } from "@/lib/video/room";
+import { signVideoToken } from "@/lib/video/room";
+import { VideoCallRoom } from "@/components/video/video-call-room";
 
 const JOIN_EARLY_MINUTES = 10;
 const JOIN_GRACE_MINUTES = 15;
@@ -67,13 +68,24 @@ export default async function GorusmePage({
     );
   }
 
+  const role = session.role as "danisan" | "psikolog";
+  const token = await signVideoToken({
+    appointmentId: appointment.id,
+    userId: session.userId,
+    role,
+  });
+  const wsBaseUrl = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001").replace(
+    /^http/,
+    "ws"
+  );
+  const returnPath = role === "danisan" ? "/danisan/randevularim" : "/psikolog/randevularim";
+
   return (
-    <div className="h-screen w-full">
-      <iframe
-        src={videoRoomUrl(appointment.videoRoomName)}
-        allow="camera; microphone; fullscreen; display-capture; autoplay"
-        className="h-full w-full border-0"
-      />
-    </div>
+    <VideoCallRoom
+      roomName={appointment.videoRoomName}
+      token={token}
+      wsBaseUrl={wsBaseUrl}
+      returnPath={returnPath}
+    />
   );
 }

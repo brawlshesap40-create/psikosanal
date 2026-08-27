@@ -15,7 +15,7 @@ export default async function PsikologBasvurulariPage() {
         )}
         {applications.map((application) => (
           <Link key={application.id} href={`/admin/psikolog-basvurulari/${application.id}`}>
-            <Card className="transition-shadow hover:shadow-md">
+            <Card className="card-interactive">
               <CardContent className="flex items-center justify-between">
                 <div>
                   <p className="font-medium text-foreground">{application.user.fullName}</p>

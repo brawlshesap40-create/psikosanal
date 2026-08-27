@@ -22,7 +22,7 @@ export default async function DanisanMesajlarPage() {
             key={conversation.id}
             href={`/danisan/mesajlar/${conversation.psychologistId}`}
           >
-            <Card className="transition-shadow hover:shadow-md">
+            <Card className="card-interactive">
               <CardContent>
                 <p className="font-medium text-foreground">
                   {conversation.psychologist.user.fullName}

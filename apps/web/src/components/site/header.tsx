@@ -3,6 +3,10 @@ import { getOptionalSession } from "@/lib/auth/dal";
 import { Button } from "@/components/ui/button";
 import { siteConfig } from "@/lib/site-config";
 import { NotificationBell } from "@/components/notifications/notification-bell";
+import { Logo } from "@/components/site/logo";
+import { MobileNav } from "@/components/site/mobile-nav";
+import { ThemeToggle } from "@/components/site/theme-toggle";
+import { HeaderScrollShell } from "@/components/site/header-scroll-shell";
 import {
   countUnreadNotifications,
   getNotificationsForUser,
@@ -18,15 +22,30 @@ export async function SiteHeader() {
     : [[], 0];
 
   return (
-    <header className="border-b border-border bg-background/80 backdrop-blur">
+    <HeaderScrollShell>
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
-        <Link href="/" className="text-lg font-semibold text-foreground">
-          {siteConfig.name}
+        <Link href="/" aria-label={siteConfig.name} className="rounded-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring">
+          <Logo />
         </Link>
 
-        <nav className="hidden items-center gap-6 text-sm text-muted-foreground sm:flex">
+        <nav className="hidden items-center gap-5 text-sm text-muted-foreground lg:flex">
           <Link href="/psikologlar" className="hover:text-foreground">
             Psikolog Bul
+          </Link>
+          <Link href="/eslesme" className="hover:text-foreground">
+            Eşleştir
+          </Link>
+          <Link href="/testler" className="hover:text-foreground">
+            Testler
+          </Link>
+          <Link href="/blog" className="hover:text-foreground">
+            Blog
+          </Link>
+          <Link href="/kurumsal" className="hover:text-foreground">
+            Kurumsal
+          </Link>
+          <Link href="/soru-sor" className="hover:text-foreground">
+            Soru Sor
           </Link>
           <Link href="/kayit/psikolog" className="hover:text-foreground">
             Psikolog Misiniz?
@@ -34,6 +53,8 @@ export async function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <MobileNav authed={!!session} />
           {session && (
             <NotificationBell notifications={notifications} unreadCount={unreadCount} />
           )}
@@ -58,7 +79,7 @@ export async function SiteHeader() {
             </Button>
           )}
           {!session && (
-            <>
+            <div className="hidden items-center gap-2 sm:flex">
               <Button
                 variant="ghost"
                 size="sm"
@@ -70,10 +91,10 @@ export async function SiteHeader() {
               <Button size="sm" nativeButton={false} render={<Link href="/kayit/danisan" />}>
                 Kayıt Ol
               </Button>
-            </>
+            </div>
           )}
         </div>
       </div>
-    </header>
+    </HeaderScrollShell>
   );
 }

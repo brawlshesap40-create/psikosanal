@@ -12,6 +12,7 @@ export async function POST(request: NextRequest) {
   const result = await finalizePaymentByToken(token);
   const durum = result.ok ? "basarili" : "basarisiz";
   const params = new URLSearchParams({ durum, tur: result.kind ?? "" });
+  if (result.giftCode) params.set("hediyeKod", result.giftCode);
 
   return NextResponse.redirect(new URL(`/odeme/sonuc?${params.toString()}`, request.url));
 }

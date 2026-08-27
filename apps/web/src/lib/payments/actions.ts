@@ -25,13 +25,14 @@ export async function initiateBookingAction(
 
   const slotId = Number(formData.get("slotId"));
   const clientNote = String(formData.get("clientNote") ?? "").trim() || null;
+  const discountCode = String(formData.get("discountCode") ?? "").trim() || undefined;
   if (!slotId) return { error: "Geçersiz randevu talebi." };
 
   let result;
   try {
     result = await paymentsService.initiateBooking(
       session.userId,
-      { slotId, clientNote },
+      { slotId, clientNote, discountCode },
       { ip: await requestIp(), callbackUrl: `${siteConfig.siteUrl}/api/payments/callback` }
     );
   } catch (error) {
@@ -53,12 +54,21 @@ export async function initiatePackagePurchaseAction(
 ): Promise<PaymentInitiateState> {
   const session = await verifyDanisanSession();
   const packageId = Number(formData.get("packageId"));
+  const discountCode = String(formData.get("discountCode") ?? "").trim() || undefined;
+  const isGift = formData.get("isGift") === "on";
+  const recipientEmail = String(formData.get("recipientEmail") ?? "").trim();
+
+  if (isGift && !recipientEmail) {
+    return { error: "Hediye için alıcının e-posta adresini girin." };
+  }
 
   try {
-    const result = await paymentsService.initiatePackagePurchase(session.userId, packageId, {
-      ip: await requestIp(),
-      callbackUrl: `${siteConfig.siteUrl}/api/payments/callback`,
-    });
+    const result = await paymentsService.initiatePackagePurchase(
+      session.userId,
+      packageId,
+      { discountCode, gift: isGift ? { recipientEmail } : undefined },
+      { ip: await requestIp(), callbackUrl: `${siteConfig.siteUrl}/api/payments/callback` }
+    );
     return { checkoutFormContent: result.checkoutFormContent };
   } catch (error) {
     if (error instanceof DomainError) return { error: error.message };

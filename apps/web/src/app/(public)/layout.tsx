@@ -1,6 +1,6 @@
 import { SiteHeader } from "@/components/site/header";
 import { SiteFooter } from "@/components/site/footer";
-import { CrisisBanner } from "@/components/site/crisis-banner";
+import { HelpWidget } from "@/components/site/help-widget";
 
 export default function PublicLayout({
   children,
@@ -9,10 +9,10 @@ export default function PublicLayout({
 }) {
   return (
     <>
-      <CrisisBanner />
       <SiteHeader />
       <main className="flex-1">{children}</main>
       <SiteFooter />
+      <HelpWidget />
     </>
   );
 }

@@ -43,6 +43,13 @@
       "when": 1787515555046,
       "tag": "0005_little_karma",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1787679025241,
+      "tag": "0006_natural_mindworm",
+      "breakpoints": true
     }
   ]
 }

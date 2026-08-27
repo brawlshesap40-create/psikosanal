@@ -1,17 +1,20 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AuthPageShell } from "@/components/auth/auth-page-shell";
 import { RegisterDanisanForm } from "@/components/auth/register-danisan-form";
 
 export default function KayitDanisanPage() {
   return (
-    <div className="mx-auto flex max-w-md flex-col justify-center px-4 py-16 sm:px-6">
-      <Card>
+    <AuthPageShell>
+      <Card className="shadow-xl shadow-black/[0.04]">
         <CardHeader>
-          <CardTitle>Danışan Kaydı</CardTitle>
+          <CardTitle className="text-xl">
+            <span className="text-gradient-brand">Danışan</span> Kaydı
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <RegisterDanisanForm />
         </CardContent>
       </Card>
-    </div>
+    </AuthPageShell>
   );
 }

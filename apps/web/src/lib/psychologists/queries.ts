@@ -12,3 +12,4 @@ export const getPendingApplications = psychologistsService.getPendingApplication
 export const getPsychologistApplicationById = psychologistsService.getPsychologistApplicationById;
 export const getAllPsychologists = psychologistsService.getAllPsychologists;
 export const countPendingApplications = psychologistsService.countPendingApplications;
+export const countApprovedPsychologists = psychologistsService.countApprovedPsychologists;

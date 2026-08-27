@@ -1,12 +1,15 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { AuthPageShell } from "@/components/auth/auth-page-shell";
 import { RegisterPsikologForm } from "@/components/auth/register-psikolog-form";
 
 export default function KayitPsikologPage() {
   return (
-    <div className="mx-auto flex max-w-xl flex-col justify-center px-4 py-16 sm:px-6">
-      <Card>
+    <AuthPageShell maxWidth="max-w-xl">
+      <Card className="shadow-xl shadow-black/[0.04]">
         <CardHeader>
-          <CardTitle>Psikolog Başvurusu</CardTitle>
+          <CardTitle className="text-xl">
+            <span className="text-gradient-brand">Psikolog</span> Başvurusu
+          </CardTitle>
           <CardDescription>
             Başvurunuz admin ekibimiz tarafından incelendikten sonra profiliniz
             yayına alınır.
@@ -16,6 +19,6 @@ export default function KayitPsikologPage() {
           <RegisterPsikologForm />
         </CardContent>
       </Card>
-    </div>
+    </AuthPageShell>
   );
 }

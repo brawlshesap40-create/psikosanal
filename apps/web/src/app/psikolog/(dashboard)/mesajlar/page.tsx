@@ -21,7 +21,7 @@ export default async function PsikologMesajlarPage() {
         )}
         {conversations.map((conversation) => (
           <Link key={conversation.id} href={`/psikolog/mesajlar/${conversation.clientId}`}>
-            <Card className="transition-shadow hover:shadow-md">
+            <Card className="card-interactive">
               <CardContent>
                 <p className="font-medium text-foreground">{conversation.client.fullName}</p>
               </CardContent>

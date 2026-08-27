@@ -6,9 +6,9 @@ import { Card, CardContent } from "@/components/ui/card";
 export default async function OdemeSonucPage({
   searchParams,
 }: {
-  searchParams: Promise<{ durum?: string; tur?: string }>;
+  searchParams: Promise<{ durum?: string; tur?: string; hediyeKod?: string }>;
 }) {
-  const { durum, tur } = await searchParams;
+  const { durum, tur, hediyeKod } = await searchParams;
   const success = durum === "basarili";
 
   return (
@@ -25,11 +25,18 @@ export default async function OdemeSonucPage({
           </h1>
           <p className="text-sm text-muted-foreground">
             {success
-              ? tur === "paket"
-                ? "Paketiniz hesabınıza tanımlandı."
-                : "Randevunuz onaylandı."
+              ? hediyeKod
+                ? "Hediyeniz hazır! Aşağıdaki kodu alıcıyla paylaşın."
+                : tur === "paket"
+                  ? "Paketiniz hesabınıza tanımlandı."
+                  : "Randevunuz onaylandı."
               : "Ödemeniz tamamlanamadı. Lütfen tekrar deneyin."}
           </p>
+          {hediyeKod && (
+            <p className="rounded-md border border-border bg-muted px-4 py-2 font-mono text-lg tracking-wider text-foreground">
+              {hediyeKod}
+            </p>
+          )}
           <Button
             variant="outline"
             nativeButton={false}

@@ -85,3 +85,24 @@ export async function getReviewByAppointmentId(appointmentId: number) {
     where: eq(reviews.appointmentId, appointmentId),
   });
 }
+
+/** Approved reviews with a written comment, for homepage testimonials. */
+export async function getFeaturedReviews(limit = 3) {
+  return db.query.reviews.findMany({
+    where: and(eq(reviews.isApproved, true), sql`${reviews.comment} is not null`),
+    orderBy: [desc(reviews.rating), desc(reviews.createdAt)],
+    limit,
+    with: { client: true, psychologist: { with: { user: true } } },
+  });
+}
+
+export async function getOverallReviewStats() {
+  const [row] = await db
+    .select({
+      average: sql<number>`coalesce(avg(${reviews.rating}), 0)`,
+      count: sql<number>`count(*)`,
+    })
+    .from(reviews)
+    .where(eq(reviews.isApproved, true));
+  return { average: Number(row?.average ?? 0), count: Number(row?.count ?? 0) };
+}

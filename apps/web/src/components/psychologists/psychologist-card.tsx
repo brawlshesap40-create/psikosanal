@@ -40,7 +40,7 @@ export function PsychologistCard({
         />
       )}
       <Link href={`/psikologlar/${psychologist.slug}`}>
-        <Card className="h-full transition-shadow hover:shadow-md">
+        <Card className="h-full card-interactive">
           <CardContent className="flex flex-col gap-3">
             <div className="flex items-center gap-3">
               <Avatar size="lg">

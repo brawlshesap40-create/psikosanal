@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AuthPageShell } from "@/components/auth/auth-page-shell";
 import { LoginForm } from "@/components/auth/login-form";
 
 export default async function GirisPage({
@@ -10,10 +11,12 @@ export default async function GirisPage({
   const { next } = await searchParams;
 
   return (
-    <div className="mx-auto flex max-w-md flex-col justify-center px-4 py-16 sm:px-6">
-      <Card>
+    <AuthPageShell>
+      <Card className="shadow-xl shadow-black/[0.04]">
         <CardHeader>
-          <CardTitle>Giriş Yap</CardTitle>
+          <CardTitle className="text-xl">
+            Tekrar <span className="text-gradient-brand">hoş geldiniz</span>
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <LoginForm next={next} />
@@ -30,6 +33,6 @@ export default async function GirisPage({
           </p>
         </CardContent>
       </Card>
-    </div>
+    </AuthPageShell>
   );
 }

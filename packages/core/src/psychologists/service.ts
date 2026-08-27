@@ -67,6 +67,7 @@ export type PsychologistFilters = {
   gender?: string;
   language?: string;
   approach?: string;
+  introOnly?: boolean;
   sort?: PsychologistSort;
   page?: number;
   pageSize?: number;
@@ -77,6 +78,7 @@ export async function getApprovedPsychologists(filters: PsychologistFilters = {}
 
   if (filters.city) conditions.push(eq(psychologistProfiles.city, filters.city));
   if (filters.onlineOnly) conditions.push(eq(psychologistProfiles.onlineAvailable, true));
+  if (filters.introOnly) conditions.push(eq(psychologistProfiles.introCallEnabled, true));
   if (filters.minPrice !== undefined)
     conditions.push(gte(psychologistProfiles.sessionPriceTl, filters.minPrice));
   if (filters.maxPrice !== undefined)
@@ -195,5 +197,13 @@ export async function countPendingApplications() {
     .select({ id: psychologistProfiles.id })
     .from(psychologistProfiles)
     .where(eq(psychologistProfiles.approvalStatus, "beklemede"));
+  return rows.length;
+}
+
+export async function countApprovedPsychologists() {
+  const rows = await db
+    .select({ id: psychologistProfiles.id })
+    .from(psychologistProfiles)
+    .where(eq(psychologistProfiles.approvalStatus, "onaylandi"));
   return rows.length;
 }

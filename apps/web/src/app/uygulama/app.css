@@ -1,0 +1,148 @@
+/* ==========================================================================
+   Psikosanal — mobil uygulama arayüzü (web sitesinden ayrı görsel dil)
+   Sadece /uygulama altında, .app-root kapsamında geçerlidir.
+   ========================================================================== */
+
+.app-root {
+  --app-bg: oklch(0.98 0.008 210);
+  --app-surface: oklch(1 0 0);
+  --app-elevated: oklch(1 0 0);
+  --app-hairline: oklch(0.92 0.008 220);
+  --app-shadow: 0 1px 2px rgba(16, 40, 48, 0.04), 0 12px 30px -16px rgba(16, 40, 48, 0.22);
+  --app-shadow-lg: 0 2px 6px rgba(16, 40, 48, 0.06), 0 26px 50px -20px rgba(16, 40, 48, 0.3);
+
+  /* app hero — teal → mavi degrade, web'deki mesh'ten farklı */
+  --app-hero: linear-gradient(
+    155deg,
+    oklch(0.66 0.13 195) 0%,
+    oklch(0.58 0.12 215) 48%,
+    oklch(0.52 0.13 255) 100%
+  );
+
+  position: relative;
+  min-height: 100dvh;
+  background: var(--app-bg);
+  color: var(--foreground);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.dark .app-root {
+  --app-bg: oklch(0.17 0.02 235);
+  --app-surface: oklch(0.213 0.02 235);
+  --app-elevated: oklch(0.243 0.022 235);
+  --app-hairline: oklch(0.32 0.02 235);
+  --app-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 14px 34px -18px rgba(0, 0, 0, 0.7);
+  --app-shadow-lg: 0 2px 8px rgba(0, 0, 0, 0.5), 0 30px 60px -22px rgba(0, 0, 0, 0.8);
+  --app-hero: linear-gradient(
+    155deg,
+    oklch(0.5 0.12 195) 0%,
+    oklch(0.42 0.11 220) 50%,
+    oklch(0.37 0.12 260) 100%
+  );
+}
+
+/* --- yüzeyler --- */
+.app-card {
+  background: var(--app-surface);
+  border-radius: 22px;
+  box-shadow: var(--app-shadow);
+}
+.app-card-lg {
+  border-radius: 26px;
+  box-shadow: var(--app-shadow-lg);
+}
+
+.app-hero-bg {
+  background: var(--app-hero);
+}
+
+/* yarı saydam + bulanık başlık/tab çubukları */
+.app-blur-bg {
+  background: color-mix(in oklch, var(--app-bg) 82%, transparent);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+.app-blur-surface {
+  background: color-mix(in oklch, var(--app-elevated) 80%, transparent);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+/* iOS tarzı gruplu liste */
+.app-list {
+  background: var(--app-surface);
+  border-radius: 22px;
+  box-shadow: var(--app-shadow);
+  overflow: hidden;
+}
+.app-list > * + * {
+  border-top: 1px solid var(--app-hairline);
+}
+
+.app-hairline {
+  border-color: var(--app-hairline);
+}
+
+/* ikon karo */
+.app-icon-tile {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 14px;
+  background: color-mix(in oklch, var(--brand), transparent 88%);
+  color: var(--brand);
+}
+.dark .app-icon-tile {
+  background: color-mix(in oklch, var(--brand), transparent 82%);
+}
+
+/* basılabilir geri bildirim */
+.press {
+  transition:
+    transform 0.16s cubic-bezier(0.2, 0, 0, 1),
+    background-color 0.16s ease;
+  touch-action: manipulation;
+}
+.press:active {
+  transform: scale(0.97);
+}
+
+/* yatay kaydırıcı — scrollbar gizli, snap */
+.app-hscroll {
+  display: flex;
+  gap: 0.75rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  padding-inline: 1.25rem;
+  margin-inline: -1.25rem;
+}
+.app-hscroll::-webkit-scrollbar {
+  display: none;
+}
+.app-hscroll > * {
+  scroll-snap-align: start;
+  flex: 0 0 auto;
+}
+
+/* giriş animasyonu */
+@keyframes app-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.app-rise {
+  animation: app-rise 0.5s cubic-bezier(0.2, 0, 0, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-rise {
+    animation: none;
+  }
+}

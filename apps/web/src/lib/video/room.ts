@@ -1,1 +1,1 @@
-export { generateVideoRoomName, videoRoomUrl } from "@psikosanal/core";
+export { generateVideoRoomName, videoRoomUrl, signVideoToken } from "@psikosanal/core";

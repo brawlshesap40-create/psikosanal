@@ -6,7 +6,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./auth/*": "./src/auth/*.ts",
-    "./validation/*": "./src/validation/*.ts"
+    "./validation/*": "./src/validation/*.ts",
+    "./psych-tests/*": "./src/psych-tests/*.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

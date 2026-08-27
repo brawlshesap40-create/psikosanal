@@ -13,6 +13,7 @@
   "dependencies": {
     "@fastify/cors": "^10.0.1",
     "@fastify/rate-limit": "^10.2.1",
+    "@fastify/websocket": "^11.3.0",
     "@psikosanal/core": "*",
     "@psikosanal/db": "*",
     "fastify": "^5.1.0",

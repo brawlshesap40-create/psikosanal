@@ -1,8 +1,26 @@
-import Link from "next/link";
+import {
+  LayoutGrid,
+  CalendarClock,
+  CalendarCheck2,
+  MessageCircle,
+  PackageOpen,
+  HelpCircle,
+  UserRound,
+} from "lucide-react";
 import { verifyPsikologSession } from "@/lib/auth/dal";
 import { logoutAction } from "@/lib/auth/actions";
 import { getPsychologistByUserId } from "@/lib/psychologists/queries";
-import { Button } from "@/components/ui/button";
+import { DashboardShell, type DashboardNavItem } from "@/components/dashboard/dashboard-shell";
+
+const NAV_ITEMS: DashboardNavItem[] = [
+  { href: "/psikolog/panel", label: "Panelim", icon: <LayoutGrid /> },
+  { href: "/psikolog/musaitlik", label: "Müsaitlik", icon: <CalendarClock /> },
+  { href: "/psikolog/randevularim", label: "Randevularım", icon: <CalendarCheck2 /> },
+  { href: "/psikolog/mesajlar", label: "Mesajlarım", icon: <MessageCircle /> },
+  { href: "/psikolog/paketler", label: "Paketler", icon: <PackageOpen /> },
+  { href: "/psikolog/sorular", label: "Sorular", icon: <HelpCircle /> },
+  { href: "/psikolog/profil", label: "Profilim", icon: <UserRound /> },
+];
 
 export default async function PsikologDashboardLayout({
   children,
@@ -12,51 +30,26 @@ export default async function PsikologDashboardLayout({
   const session = await verifyPsikologSession();
   const profile = await getPsychologistByUserId(session.userId);
 
-  return (
-    <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6">
-      <div className="mb-6 flex items-center justify-between">
-        <nav className="flex gap-4 text-sm font-medium text-muted-foreground">
-          <Link href="/psikolog/panel" className="hover:text-foreground">
-            Panelim
-          </Link>
-          <Link href="/psikolog/musaitlik" className="hover:text-foreground">
-            Müsaitlik
-          </Link>
-          <Link href="/psikolog/randevularim" className="hover:text-foreground">
-            Randevularım
-          </Link>
-          <Link href="/psikolog/mesajlar" className="hover:text-foreground">
-            Mesajlarım
-          </Link>
-          <Link href="/psikolog/paketler" className="hover:text-foreground">
-            Paketler
-          </Link>
-          <Link href="/psikolog/profil" className="hover:text-foreground">
-            Profilim
-          </Link>
-        </nav>
-        <form action={logoutAction} className="flex items-center gap-3">
-          <span className="text-sm text-muted-foreground">{session.email}</span>
-          <Button type="submit" variant="ghost" size="sm">
-            Çıkış Yap
-          </Button>
-        </form>
+  const banner =
+    profile?.approvalStatus === "beklemede" ? (
+      <div className="mb-6 rounded-xl border border-border bg-muted px-4 py-3 text-sm text-muted-foreground">
+        Başvurunuz henüz onaylanmadı. Onaylandıktan sonra profiliniz danışanlara görünür olacak.
       </div>
+    ) : profile?.approvalStatus === "reddedildi" ? (
+      <div className="mb-6 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+        Başvurunuz reddedildi. {profile.adminNote && <span>Not: {profile.adminNote}</span>}
+      </div>
+    ) : null;
 
-      {profile?.approvalStatus === "beklemede" && (
-        <div className="mb-6 rounded-lg border border-border bg-muted px-4 py-3 text-sm text-muted-foreground">
-          Başvurunuz henüz onaylanmadı. Onaylandıktan sonra profiliniz
-          danışanlara görünür olacak.
-        </div>
-      )}
-      {profile?.approvalStatus === "reddedildi" && (
-        <div className="mb-6 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-          Başvurunuz reddedildi.{" "}
-          {profile.adminNote && <span>Not: {profile.adminNote}</span>}
-        </div>
-      )}
-
+  return (
+    <DashboardShell
+      items={NAV_ITEMS}
+      roleLabel="Psikolog Paneli"
+      email={session.email}
+      logoutAction={logoutAction}
+      banner={banner}
+    >
       {children}
-    </div>
+    </DashboardShell>
   );
 }

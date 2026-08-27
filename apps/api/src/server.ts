@@ -1,6 +1,7 @@
 import Fastify, { type FastifyServerOptions } from "fastify";
 import cors from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
+import websocket from "@fastify/websocket";
 import { corsOrigins, env } from "./env";
 import authPlugin from "./plugins/auth";
 import errorHandlerPlugin from "./plugins/error-handler";
@@ -16,6 +17,7 @@ import reviewsRoutes from "./routes/reviews";
 import psychologistsRoutes from "./routes/psychologists";
 import appointmentsRoutes from "./routes/appointments";
 import paymentsRoutes from "./routes/payments";
+import videoSignalingRoutes from "./routes/video-signaling";
 
 export function buildServer(opts: FastifyServerOptions = {}) {
   const app = Fastify({
@@ -24,9 +26,11 @@ export function buildServer(opts: FastifyServerOptions = {}) {
   });
 
   app.register(cors, { origin: corsOrigins });
+  app.register(websocket);
   app.register(errorHandlerPlugin);
   app.register(authPlugin);
   app.register(healthRoutes);
+  app.register(videoSignalingRoutes);
   app.register(notificationsRoutes);
   app.register(favoritesRoutes);
   app.register(waitlistRoutes);

@@ -1,8 +1,24 @@
-import Link from "next/link";
+import {
+  LayoutGrid,
+  CalendarCheck2,
+  MessageCircle,
+  PackageOpen,
+  Heart,
+  UserRound,
+} from "lucide-react";
 import { verifyDanisanSession } from "@/lib/auth/dal";
 import { logoutAction } from "@/lib/auth/actions";
-import { Button } from "@/components/ui/button";
 import { CrisisBanner } from "@/components/site/crisis-banner";
+import { DashboardShell, type DashboardNavItem } from "@/components/dashboard/dashboard-shell";
+
+const NAV_ITEMS: DashboardNavItem[] = [
+  { href: "/danisan", label: "Panelim", icon: <LayoutGrid /> },
+  { href: "/danisan/randevularim", label: "Randevularım", icon: <CalendarCheck2 /> },
+  { href: "/danisan/mesajlar", label: "Mesajlarım", icon: <MessageCircle /> },
+  { href: "/danisan/paketlerim", label: "Paketlerim", icon: <PackageOpen /> },
+  { href: "/danisan/favorilerim", label: "Favorilerim", icon: <Heart /> },
+  { href: "/danisan/profil", label: "Profilim", icon: <UserRound /> },
+];
 
 export default async function DanisanDashboardLayout({
   children,
@@ -13,35 +29,15 @@ export default async function DanisanDashboardLayout({
 
   return (
     <>
-      <CrisisBanner />
-      <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6">
-      <div className="mb-6 flex items-center justify-between">
-        <nav className="flex gap-4 text-sm font-medium text-muted-foreground">
-          <Link href="/danisan/randevularim" className="hover:text-foreground">
-            Randevularım
-          </Link>
-          <Link href="/danisan/mesajlar" className="hover:text-foreground">
-            Mesajlarım
-          </Link>
-          <Link href="/danisan/paketlerim" className="hover:text-foreground">
-            Paketlerim
-          </Link>
-          <Link href="/danisan/favorilerim" className="hover:text-foreground">
-            Favorilerim
-          </Link>
-          <Link href="/danisan/profil" className="hover:text-foreground">
-            Profilim
-          </Link>
-        </nav>
-        <form action={logoutAction} className="flex items-center gap-3">
-          <span className="text-sm text-muted-foreground">{session.email}</span>
-          <Button type="submit" variant="ghost" size="sm">
-            Çıkış Yap
-          </Button>
-        </form>
-      </div>
+      <DashboardShell
+        items={NAV_ITEMS}
+        roleLabel="Danışan Paneli"
+        email={session.email}
+        logoutAction={logoutAction}
+      >
         {children}
-      </div>
+      </DashboardShell>
+      <CrisisBanner />
     </>
   );
 }

@@ -3,6 +3,7 @@ import {
   boolean,
   index,
   integer,
+  jsonb,
   pgEnum,
   pgTable,
   serial,
@@ -66,6 +67,26 @@ export const notificationTypeEnum = pgEnum("notification_type", [
   "yeni_mesaj",
   "yeni_yorum",
   "musaitlik_bildirimi",
+]);
+
+export const discountKindEnum = pgEnum("discount_kind", ["yuzde", "tutar"]);
+
+export const discountAppliesToEnum = pgEnum("discount_applies_to", [
+  "hepsi",
+  "seans",
+  "paket",
+]);
+
+export const publicQuestionStatusEnum = pgEnum("public_question_status", [
+  "bekliyor",
+  "yanitlandi",
+  "yayinda",
+]);
+
+export const corporateLeadStatusEnum = pgEnum("corporate_lead_status", [
+  "yeni",
+  "iletisimde",
+  "kapandi",
 ]);
 
 export const users = pgTable("users", {
@@ -326,6 +347,12 @@ export const payments = pgTable("payments", {
   iyzicoPaymentId: varchar("iyzico_payment_id", { length: 100 }),
   iyzicoToken: varchar("iyzico_token", { length: 100 }),
   failReason: text("fail_reason"),
+  discountCodeId: integer("discount_code_id").references(() => discountCodes.id, {
+    onDelete: "set null",
+  }),
+  discountAmountTl: integer("discount_amount_tl"),
+  isGift: boolean("is_gift").notNull().default(false),
+  giftRecipientEmail: varchar("gift_recipient_email", { length: 255 }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
@@ -383,6 +410,150 @@ export const notifications = pgTable("notifications", {
     .notNull()
     .defaultNow(),
 });
+
+export const blogPosts = pgTable("blog_posts", {
+  id: serial("id").primaryKey(),
+  slug: varchar("slug", { length: 255 }).notNull().unique(),
+  title: varchar("title", { length: 200 }).notNull(),
+  excerpt: text("excerpt").notNull(),
+  content: text("content").notNull(),
+  coverImageUrl: text("cover_image_url"),
+  authorName: varchar("author_name", { length: 150 }).notNull(),
+  published: boolean("published").notNull().default(false),
+  publishedAt: timestamp("published_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+export const psychTests = pgTable("psych_tests", {
+  id: serial("id").primaryKey(),
+  slug: varchar("slug", { length: 150 }).notNull().unique(),
+  title: varchar("title", { length: 200 }).notNull(),
+  description: text("description").notNull(),
+  resultBands: jsonb("result_bands")
+    .$type<{ min: number; max: number; label: string; description: string }[]>()
+    .notNull(),
+  relatedSpecialtySlug: varchar("related_specialty_slug", { length: 100 }),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+export const psychTestQuestions = pgTable("psych_test_questions", {
+  id: serial("id").primaryKey(),
+  testId: integer("test_id")
+    .notNull()
+    .references(() => psychTests.id, { onDelete: "cascade" }),
+  order: integer("order").notNull(),
+  text: text("text").notNull(),
+});
+
+export const discountCodes = pgTable("discount_codes", {
+  id: serial("id").primaryKey(),
+  code: varchar("code", { length: 40 }).notNull().unique(),
+  kind: discountKindEnum("kind").notNull(),
+  value: integer("value").notNull(),
+  appliesTo: discountAppliesToEnum("applies_to").notNull().default("hepsi"),
+  maxUses: integer("max_uses"),
+  usedCount: integer("used_count").notNull().default(0),
+  validFrom: timestamp("valid_from", { withTimezone: true }),
+  validUntil: timestamp("valid_until", { withTimezone: true }),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+export const publicQuestions = pgTable("public_questions", {
+  id: serial("id").primaryKey(),
+  questionText: text("question_text").notNull(),
+  isAnonymous: boolean("is_anonymous").notNull().default(false),
+  askerName: varchar("asker_name", { length: 150 }),
+  askerEmail: varchar("asker_email", { length: 255 }),
+  answerText: text("answer_text"),
+  answeredByPsychologistId: integer("answered_by_psychologist_id").references(
+    () => psychologistProfiles.id,
+    { onDelete: "set null" }
+  ),
+  status: publicQuestionStatusEnum("status").notNull().default("bekliyor"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  answeredAt: timestamp("answered_at", { withTimezone: true }),
+});
+
+export const corporateLeads = pgTable("corporate_leads", {
+  id: serial("id").primaryKey(),
+  companyName: varchar("company_name", { length: 200 }).notNull(),
+  contactName: varchar("contact_name", { length: 150 }).notNull(),
+  email: varchar("email", { length: 255 }).notNull(),
+  phone: varchar("phone", { length: 30 }),
+  employeeCountRange: varchar("employee_count_range", { length: 50 }),
+  message: text("message"),
+  status: corporateLeadStatusEnum("status").notNull().default("yeni"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+export const giftVouchers = pgTable("gift_vouchers", {
+  id: serial("id").primaryKey(),
+  packageId: integer("package_id")
+    .notNull()
+    .references(() => packages.id, { onDelete: "cascade" }),
+  buyerId: integer("buyer_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  paymentId: integer("payment_id")
+    .notNull()
+    .unique()
+    .references(() => payments.id, { onDelete: "cascade" }),
+  recipientEmail: varchar("recipient_email", { length: 255 }).notNull(),
+  code: varchar("code", { length: 20 }).notNull().unique(),
+  redeemed: boolean("redeemed").notNull().default(false),
+  redeemedByClientId: integer("redeemed_by_client_id").references(() => users.id, {
+    onDelete: "set null",
+  }),
+  redeemedAt: timestamp("redeemed_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+export const blogPostsRelations = relations(blogPosts, () => ({}));
+
+export const psychTestsRelations = relations(psychTests, ({ many }) => ({
+  questions: many(psychTestQuestions),
+}));
+
+export const psychTestQuestionsRelations = relations(psychTestQuestions, ({ one }) => ({
+  test: one(psychTests, { fields: [psychTestQuestions.testId], references: [psychTests.id] }),
+}));
+
+export const discountCodesRelations = relations(discountCodes, ({ many }) => ({
+  payments: many(payments),
+}));
+
+export const publicQuestionsRelations = relations(publicQuestions, ({ one }) => ({
+  answeredByPsychologist: one(psychologistProfiles, {
+    fields: [publicQuestions.answeredByPsychologistId],
+    references: [psychologistProfiles.id],
+  }),
+}));
+
+export const giftVouchersRelations = relations(giftVouchers, ({ one }) => ({
+  package: one(packages, { fields: [giftVouchers.packageId], references: [packages.id] }),
+  buyer: one(users, { fields: [giftVouchers.buyerId], references: [users.id] }),
+  payment: one(payments, { fields: [giftVouchers.paymentId], references: [payments.id] }),
+  redeemedByClient: one(users, {
+    fields: [giftVouchers.redeemedByClientId],
+    references: [users.id],
+  }),
+}));
 
 export const favoritesRelations = relations(favorites, ({ one }) => ({
   client: one(users, { fields: [favorites.clientId], references: [users.id] }),
@@ -593,5 +764,13 @@ export const paymentsRelations = relations(payments, ({ one }) => ({
   packagePurchase: one(packagePurchases, {
     fields: [payments.packagePurchaseId],
     references: [packagePurchases.id],
+  }),
+  discountCode: one(discountCodes, {
+    fields: [payments.discountCodeId],
+    references: [discountCodes.id],
+  }),
+  giftVoucher: one(giftVouchers, {
+    fields: [payments.id],
+    references: [giftVouchers.paymentId],
   }),
 }));
